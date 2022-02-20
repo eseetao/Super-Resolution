@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class GeneratorBlock(nn.Modul):
+class GeneratorBlock(nn.Module):
     '''
     Defines Single Residual Block for Generator
     Kwargs:
@@ -33,7 +33,7 @@ class GeneratorBlock(nn.Modul):
         residual = self.conv2(residual)
         residual = self.BN2(residual)
         residual = self.nl(residual)
-        return residual
+        return x+residual
 
 class DiscriminatorBlock(nn.Module):
     '''
