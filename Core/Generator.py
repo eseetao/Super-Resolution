@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from Backbone import GeneratorBlock
+from Backbone import GeneratorBlock,UpsampleBlock
+import math 
 
 class Generator(nn.Module):
     '''
@@ -9,7 +10,8 @@ class Generator(nn.Module):
     Kwargs:
 
     '''
-    def __init__(self,scale=4):
+    def __init__(self,scale=4,block_depth=7):
+        assert(scale==4 or scale==8),"Current model designed for upsampling by 4 or by 8"
         super(Generator,self).__init__()
         self.scale = scale
         self.backbone_channels = 64
@@ -20,27 +22,23 @@ class Generator(nn.Module):
         
         self.feat_extractor = nn.Conv2d(3,self.backbone_channels,kernel_size=self.feat_kernel_size,stride=self.feat_stride,padding=((self.feat_kernel_size-1)*self.dilation)//2,bias=False) 
         
-        self.block1 = GeneratorBlock(kernel_size=3,in_channels=self.backbone_channels)
-        self.block2 = GeneratorBlock(kernel_size=3,in_channels=self.backbone_channels)
-        self.block3 = GeneratorBlock(kernel_size=3,in_channels=self.backbone_channels)
-        self.block4 = GeneratorBlock(kernel_size=3,in_channels=self.backbone_channels)
-        self.block5 = GeneratorBlock(kernel_size=3,in_channels=self.backbone_channels)
-        self.block6 = GeneratorBlock(kernel_size=3,in_channels=self.backbone_channels)
-        self.block7 = GeneratorBlock(kernel_size=3,in_channels=self.backbone_channels)
+        generator_blocks = [GeneratorBlock(kernel_size=3,in_channels=self.backbone_channels) for _ in range(block_depth)]
+        self.backbone = nn.Sequential(*generator_blocks)
 
-        self.feat_combine = nn.Conv2d(self.backbone_channels,self.backbone_channels,kernel_size=self.feat_kernel_size,stride=self.feat_stride,padding=((self.feat_kernel_size-1)*self.dilation)//2,bias=False) 
+        self.combine_feat = nn.Conv2d(self.backbone_channels,self.backbone_channels,kernel_size=3,stride=self.feat_stride,padding=((self.feat_kernel_size-1)*self.dilation)//2,bias=False) 
         self.BN1 = nn.BatchNorm2d(self.backbone_channels)
+
+        upsample_rounds = math.floor(math.log2(scale))
+        upsample_layers = [UpsampleBlock(self.backbone_channels) for _ in range(upsample_rounds)]
+        self.Upsample = nn.Sequential(*upsample_layers)
+        
+        self.condense_to_image = nn.Conv2d(self.backbone_channels,1,kernel_size=self.feat_kernel_size,stride=self.feat_stride,padding=((self.feat_kernel_size-1)*self.dilation)//2,bias=False)
 
     def forward(self,x):
 
         feat = self.nl(self.feat_extractor(x))
-
-        residual_feat = self.block1(feat)
-        residual = self.block2(residual_feat)
-        residual = self.block3(residual)
-        residual = self.block4(residual)
-        residual = self.block5(residual)
-        residual = self.block6(residual)
-        residual = self.block7(residual)
-
-        return residual
+        residual = self.backbone(feat)
+        residual = feat + self.BN1(self.combine_feat(residual))
+        upsampled =  self.Upsample(residual)
+        upsampled = self.condense_to_image(upsampled)
+        return upsampled
