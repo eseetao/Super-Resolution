@@ -32,7 +32,6 @@ class GeneratorBlock(nn.Module):
         residual = self.nl(residual)
         residual = self.conv2(residual)
         residual = self.BN2(residual)
-        residual = self.nl(residual)
         return x+residual
 
 class DiscriminatorBlock(nn.Module):
@@ -51,10 +50,10 @@ class DiscriminatorBlock(nn.Module):
         dilation: dilation for conv blocks
         default:1
     '''
-    def __init__(self,kernel_size=3,channels=64,stride=1,dilation=1):
+    def __init__(self,kernel_size=3,in_channels=64,output_channels=64,stride=1,dilation=1):
         super(DiscriminatorBlock,self).__init__()
-        self.conv1 = nn.Conv2d(channels,channels,kernel_size=kernel_size,stride=stride,padding=((kernel_size-1)*dilation)//2,bias=False) 
-        self.BN1 = nn.BatchNorm2d(channels)
+        self.conv1 = nn.Conv2d(in_channels,output_channels,kernel_size=kernel_size,stride=stride,padding=((kernel_size-1)*dilation)//2,bias=False) 
+        self.BN1 = nn.BatchNorm2d(output_channels)
         self.nl = nn.LeakyReLU(0.2)
     
     def forward(self,x):
@@ -62,3 +61,15 @@ class DiscriminatorBlock(nn.Module):
         residual = self.BN1(residual)
         residual = self.nl(residual)
         return residual
+
+class UpsampleBlock(nn.Module):
+    def __init__(self, channels,kernel_size=3,stride=1,dilation=1):
+        super(UpsampleBlock, self).__init__()
+        self.upsample_conv= nn.Conv2d(channels, channels * 4, kernel_size=kernel_size,stride=stride,padding=((kernel_size-1)*dilation)//2,bias=False)
+        self.shuffle = nn.PixelShuffle(2),
+        self.nl = nn.PReLU(),
+        
+    def forward(self, x):
+        expanded = self.upsample_conv(x)
+        upsampled = self.nl(self.shuffle(expanded))
+        return upsampled
