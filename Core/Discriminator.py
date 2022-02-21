@@ -1,13 +1,14 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from Backbone import DiscriminatorBlock
+from .Backbone import DiscriminatorBlock
 
 class Discriminator(nn.Module):
     '''
     Discriminates between HR and SR samples 
-    Kwargs:
-
+    Args:
+        image_height: height of input image
+        image_width: width of input image
     '''
     def __init__(self,image_height,image_width):
         super(Discriminator,self).__init__()
