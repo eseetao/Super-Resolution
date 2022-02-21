@@ -1,14 +1,18 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from Backbone import GeneratorBlock,UpsampleBlock
+from .Backbone import GeneratorBlock,UpsampleBlock
 import math 
 
 class Generator(nn.Module):
     '''
     Discriminates between HR and SR samples 
     Kwargs:
+        scale: resolution to upsample the image by
+        default: 4 (other option 8)
 
+        block_depth: number of generator blocks used for backbone of generator
+        defalut: 7
     '''
     def __init__(self,scale=4,block_depth=7):
         assert(scale==4 or scale==8),"Current model designed for upsampling by 4 or by 8"
