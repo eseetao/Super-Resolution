@@ -29,15 +29,15 @@ class ImageNet:
                 transforms.RandomRotation([0, 90]),
                 transforms.RandomHorizontalFlip(0.5),
                 transforms.PILToTensor(),
-                transforms.ConvertImageDtype(torch.float)
-                #transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+                transforms.ConvertImageDtype(torch.float),
+                transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
             ])
         else:
             self.hr_transforms = transforms.Compose([
                 transforms.CenterCrop(image_size),
                 transforms.PILToTensor(),
-                transforms.ConvertImageDtype(torch.float)
-                #transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+                transforms.ConvertImageDtype(torch.float),
+                transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
                 ])   
 
         self.lr_transforms = transforms.Resize((image_size[0] // scale,image_size[1] // scale), interpolation=IMode.BICUBIC)     
