@@ -1,7 +1,7 @@
 import torch
 import os
 from glob import glob
-from torch.utils.data import dataset
+from torch.utils.data import dataset,dataloader
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode as IMode
 from PIL import Image
@@ -50,5 +50,15 @@ class ImageNet:
         lr_tensor = self.lr_transforms(hr_tensor)
         return hr_tensor,lr_tensor
 
+def dataloader(PATH,dataset="ImageNet",split="train",scale=4):
+    if dataset == "ImageNet":
+        data = ImageNet(PATH,split=split,scale=scale)
+    train_dataloader = dataloader(data,
+                                  batch_size=config.batch_size,
+                                  shuffle=True,
+                                  num_workers=config.num_workers,
+                                  pin_memory=True,
+                                  persistent_workers=True)
+    return
 
        
