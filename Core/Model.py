@@ -16,7 +16,7 @@ class Model:
         self.discriminator = Discriminator(config['height'],config['width']).to(config['device'])
         self.generator = Generator(config['scale'],config['model']['block_depth']).to(config['device'])
 
-        if mode != 'test':
+        if 'train' in config.keys():
             #initalize loss
             self.psnr_criterion = nn.MSELoss().to(config['device'])
             self.pixel_criterion = nn.MSELoss().to(config['device'])
@@ -30,9 +30,9 @@ class Model:
             self.g_scheduler = lr_scheduler.StepLR(self.g_optimizer, config['train']['g_optimizer_step_size'], config['train']['g_optimizer_gamma'])
 
         if config['resume']:
-            self.restore_checkpoint(config,mode)
+            self.restore_checkpoint(config)
         
-    def restore_checkpoint(self,config,mode):
+    def restore_checkpoint(self,config):
         '''
         Restores checkpoint for given config file
         Args:
@@ -43,7 +43,7 @@ class Model:
             discriminator_checkpoint = torch.load(config['resume_d_weight'])
             self.discriminator.load_state_dict(discriminator_checkpoint['model_state_dict'], strict=config.strict)
             self.discriminator.to(config['device'])
-            if mode != 'test':
+            if 'train' in config.keys():
                 #Extracts optimizer state
                 self.d_optimizer.load_state_dict(discriminator_checkpoint['optimizer_state_dict'])
                 #Extracts scheduler state
@@ -54,7 +54,7 @@ class Model:
             generator_checkpoint = torch.load(config['resume_g_weight'])
             self.generator.load_state_dict(generator_checkpoint['model_state_dict'], strict=config.strict)
             self.generator.to(config['device'])
-            if mode!='test':
+            if 'train' in config.keys():
                 #Extracts optimizer state
                 self.g_optimizer.load_state_dict(generator_checkpoint['optimizer_state_dict'])
                 #Extracts scheduler state
