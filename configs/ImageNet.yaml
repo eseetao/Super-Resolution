@@ -1,5 +1,9 @@
+exp_name: 'Pretrain_ImageNet'
 train:
+  PATH: ''
   batch_size: 4
   lr: 0.0001
+  epochs:
 val:
+  PATH: ''
   batch_size: 1

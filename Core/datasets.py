@@ -50,7 +50,7 @@ class ImageNet:
         lr_tensor = self.lr_transforms(hr_tensor)
         return hr_tensor,lr_tensor
 
-def dataloader(PATH,dataset="ImageNet",split="train",scale=4):
+def dataloader(configs):
     if dataset == "ImageNet":
         data = ImageNet(PATH,split=split,scale=scale)
     train_dataloader = dataloader(data,

@@ -22,16 +22,7 @@ class ContentLoss(nn.Module):
         for parameters in self.feature_extractor.parameters():
             parameters.requires_grad = False
 
-        # The preprocessing method of the input data. This is the VGG model preprocessing method of the ImageNet dataset.
-        self.register_buffer("mean", torch.Tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1))
-        self.register_buffer("std", torch.Tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1))
-
     def forward(self, sr, hr):
-        # Standardized operations
-        sr = sr.sub(self.mean).div(self.std)
-        hr = hr.sub(self.mean).div(self.std)
-
         # Find the feature map difference between the two images
         loss = F.l1_loss(self.feature_extractor(sr), self.feature_extractor(hr))
-
         return loss
