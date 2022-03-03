@@ -32,13 +32,15 @@ class ImageNet:
                 transforms.ConvertImageDtype(torch.float),
                 transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
             ])
-        else:
+        elif split == "val":
             self.hr_transforms = transforms.Compose([
                 transforms.CenterCrop(image_size),
                 transforms.PILToTensor(),
                 transforms.ConvertImageDtype(torch.float),
                 transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
                 ])   
+        else:
+            raise Exception("Only implemented split == 'train' and 'val', found another argument")
 
         self.lr_transforms = transforms.Resize((image_size[0] // scale,image_size[1] // scale), interpolation=IMode.BICUBIC)     
     
@@ -51,6 +53,9 @@ class ImageNet:
         return hr_tensor,lr_tensor
 
 def generate_dataloader(configs):
+    '''
+    Generates the dataloader for both train and validation sets
+    '''
     assert 'train' in configs.keys(),"config must have arguments for training(train) and validation(val)"
     if configs['dataset'] == "ImageNet":
         train_data = ImageNet(configs['PATH'],split='train',scale=configs['scale'])
