@@ -50,15 +50,26 @@ class ImageNet:
         lr_tensor = self.lr_transforms(hr_tensor)
         return hr_tensor,lr_tensor
 
-def dataloader(configs):
-    if dataset == "ImageNet":
-        data = ImageNet(PATH,split=split,scale=scale)
-    train_dataloader = dataloader(data,
-                                  batch_size=config.batch_size,
-                                  shuffle=True,
-                                  num_workers=config.num_workers,
-                                  pin_memory=True,
-                                  persistent_workers=True)
-    return
+def generate_dataloader(configs):
+    assert 'train' in configs.keys(),"config must have arguments for training(train) and validation(val)"
+    if configs['dataset'] == "ImageNet":
+        train_data = ImageNet(configs['PATH'],split='train',scale=configs['scale'])
+        val_data = ImageNet(configs['PATH'],split='val',scale=configs['scale'])
+
+    train_dataloader = dataloader(train_data,
+                                batch_size=configs['PATH']['train']['batch_size'],
+                                shuffle=True,
+                                num_workers=configs['num_workers'],
+                                pin_memory=True,
+                                persistent_workers=True)
+
+    val_dataloader = dataloader(val_data,
+                                batch_size=configs['PATH']['val']['batch_size'],
+                                shuffle=False,
+                                num_workers=configs['num_workers'],
+                                pin_memory=True,
+                                persistent_workers=True)
+
+    return train_dataloader,val_dataloader
 
        
