@@ -1,3 +1,4 @@
+from tqdm import tqdm
 import torch
 import torch.nn as nn
 from torch.cuda import amp
@@ -166,7 +167,16 @@ class Model:
         '''
         self.generator.train()
         self.discriminator.train()
-        for index,(hr_tensor,lr_tensor) in enumerate(dataloader):
+
+        generator_epoch_loss = 0
+        adverserial_epoch_loss = 0
+        content_epoch_loss = 0
+        pixel_epoch_loss = 0
+        discriminator_epoch_loss = 0
+        count = 0
+
+        for hr_tensor,lr_tensor in tqdm(dataloader):
+            count = count + 1
             #transfer data to GPU for training
             hr = hr_tensor.to(self.device)
             lr = lr_tensor.to(self.device)
@@ -174,28 +184,66 @@ class Model:
             sr = self.generator(lr)
             # take discriminator step to update corresponding weights
             Discriminator_loss = self.discriminator_step(hr,sr)
+            #computing loss
+            discriminator_epoch_loss = discriminator_epoch_loss + Discriminator_loss.item()/lr.size(0)
             # take generator step to update corresponding weights
-            generator_loss,pixel_loss,content_loss,adverserial_loss = self.generator_step(hr,sr)
+            Generator_loss,pixel_loss,content_loss,adverserial_loss = self.generator_step(hr,sr)
+            #computing generator loss
+            generator_epoch_loss = generator_epoch_loss + (Generator_loss.item()/lr.size(0))
+            pixel_epoch_loss = pixel_epoch_loss + (pixel_loss.item()/lr.size(0))
+            content_epoch_loss = content_epoch_loss + (content_loss.item()/lr.size(0))
+            adverserial_epoch_loss = adverserial_epoch_loss  + (adverserial_loss.item()/lr.size(0))
 
-        return None
+        self.writer("Train/Generator_loss",generator_epoch_loss/count,epoch)
+        self.writer("Train/Adverserial_loss",adverserial_epoch_loss/count,epoch)
+        self.writer("Train/Content_loss",content_epoch_loss/count,epoch)
+        self.writer("Train/Pixel_loss",pixel_epoch_loss/count,epoch)
+        self.writer("Train/Discriminator_loss",discriminator_epoch_loss/count,epoch)
 
+        print("Mean generator loss :{} \n".format(generator_epoch_loss/count))
+        print("Mean discriminator loss :{} \n".format(discriminator_epoch_loss/count))
+
+        self.d_scheduler.step()
+        self.g_scheduler.step()
+
+    @torch.no_grad()
     def epoch_eval(self,dataloader,epoch):
         '''
-        Evaluates model with dataloader for current epoch
+        Evaluates model with dataloader for current epoch during training
         Args:
             dataloader: data to evaluate the model on
             epoch: epoch the model is currently training for
+        Returns:
+            generator_loss : combination of pixel_loss,adverserial_loss and content_loss
         '''
         self.generator.eval()
-        self.discriminator.eval()
-        return None
+        for hr_tensor,lr_tensor in tqdm(dataloader):
+            count = count + 1
+            #transfer data to GPU for training
+            hr = hr_tensor.to(self.device)
+            lr = lr_tensor.to(self.device)
+            #generate superresolution samples
+            sr = self.generator(lr)
+            # take generator step to update corresponding weights
+            Generator_loss,pixel_loss,content_loss,adverserial_loss = self.generator_step(hr,sr)
+            #computing generator loss
+            generator_epoch_loss = generator_epoch_loss + (Generator_loss.item()/lr.size(0))
+            pixel_epoch_loss = pixel_epoch_loss + (pixel_loss.item()/lr.size(0))
+            content_epoch_loss = content_epoch_loss + (content_loss.item()/lr.size(0))
+            adverserial_epoch_loss = adverserial_epoch_loss  + (adverserial_loss.item()/lr.size(0))
+        self.writer("Val/Generator_loss",generator_epoch_loss/count,epoch)
+        self.writer("Val/Adverserial_loss",adverserial_epoch_loss/count,epoch)
+        self.writer("Val/Content_loss",content_epoch_loss/count,epoch)
+        self.writer("Val/Pixel_loss",pixel_epoch_loss/count,epoch)
+        print("Mean generator loss :{} \n".format(generator_epoch_loss/count))
+        return generator_epoch_loss/count
 
+    @torch.no_grad()
     def inference(self,dataloader):
         '''
         Runs inference with test data
         Args:
-            dataloader: data to evaluate the model on
+            dataloader: data to test on. assumes that dataloader provided for inference does not share
         '''
         self.generator.eval()
-        self.discriminator.eval()
         return None

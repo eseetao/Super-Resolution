@@ -1,7 +1,9 @@
 exp_name: 'Pretrain_ImageNet'
 scale : 4
 PATH: './Data/'
+MODEL_SAVE_LOCATION: './saved_models/ImageNet/' 
 num_workers: 1
+visualize_location: './Tensorboard/'
 model:
   block_depth: 7
   pixel_weight : 1.0
