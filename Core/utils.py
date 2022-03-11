@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-
+import os
 
 def plot_for_dataset_sample(sample):
     '''
@@ -21,3 +21,9 @@ def plot_for_dataset_sample(sample):
     ax2.set_xticks([])
     ax2.set_yticks([])
     plt.show()
+
+def create_folder(PATH):
+    if os.path.isdir(PATH):
+        return None
+    else:
+        os.system("mkdir -p {}".format(PATH))
