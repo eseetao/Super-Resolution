@@ -26,7 +26,7 @@ class Generator(nn.Module):
         
         self.feat_extractor = nn.Conv2d(3,self.backbone_channels,kernel_size=self.feat_kernel_size,stride=self.feat_stride,padding=((self.feat_kernel_size-1)*self.dilation)//2,bias=False) 
         
-        generator_blocks = [GeneratorBlock(kernel_size=3,in_channels=self.backbone_channels) for _ in range(block_depth)]
+        generator_blocks = [GeneratorBlock(kernel_size=3,channels=self.backbone_channels) for _ in range(block_depth)]
         self.backbone = nn.Sequential(*generator_blocks)
 
         self.combine_feat = nn.Conv2d(self.backbone_channels,self.backbone_channels,kernel_size=3,stride=self.feat_stride,padding=((self.feat_kernel_size-1)*self.dilation)//2,bias=False) 

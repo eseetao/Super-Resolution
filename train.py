@@ -23,7 +23,8 @@ if __name__ == '__main__':
     #import pdb;pdb.set_trace()
     with open(args.cfg,'r') as f:
         config = yaml.full_load(f)
-    
+    config['device'] = torch.device("cuda:{}".format(config['device']) if torch.cuda.is_available() else "cpu")
+
     train_loader,val_loader = generate_dataloader(config)#dataloader for training and validation
     SRGAN = Model(config)#initialize model for training/validation
     create_folder(config['MODEL_SAVE_LOCATION'])#create folder for saving models after training
@@ -32,6 +33,7 @@ if __name__ == '__main__':
     for epoch in range(config['train']['epochs']):
 
         SRGAN.epoch_train(train_loader,epoch)#trains one epoch
+        import pdb;pdb.set_trace()
         eval_loss = SRGAN.epoch_eval(val_loader,epoch)#evaluates validation data
 
         if epoch == 0 or best_loss>eval_loss:

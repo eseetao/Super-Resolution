@@ -1,12 +1,13 @@
+from tkinter import N
 import torch
 import os
 from glob import glob
-from torch.utils.data import dataset,dataloader
+from torch.utils.data import Dataset,DataLoader
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode as IMode
 from PIL import Image
 
-class ImageNet:
+class ImageNet(Dataset):
     '''
     class to generate data for super resolution task from ImageNet dataset
     Args:
@@ -22,7 +23,7 @@ class ImageNet:
     def __init__(self,PATH,image_size,split="train",scale=4):
         super(ImageNet,self).__init__()
         self.file_list = sorted(glob(os.path.join(PATH,'CLS-LOC/{}/*/*.JPEG'.format(split))))
-    
+
         if split == "train":
             self.hr_transforms = transforms.Compose([
                 transforms.RandomCrop(image_size),
@@ -42,7 +43,7 @@ class ImageNet:
         else:
             raise Exception("Only implemented split == 'train' and 'val', found another argument")
 
-        self.lr_transforms = transforms.Resize((image_size[0] // scale,image_size[1] // scale), interpolation=IMode.BICUBIC)     
+        self.lr_transforms = transforms.Resize((image_size // scale,image_size // scale), interpolation=IMode.BICUBIC)     
     
     def __getitem__(self,index):
         #read image
@@ -51,6 +52,9 @@ class ImageNet:
         hr_tensor = self.hr_transforms(image)
         lr_tensor = self.lr_transforms(hr_tensor)
         return hr_tensor,lr_tensor
+    
+    def __len__(self):
+        return len(self.file_list)
 
 def generate_dataloader(configs):
     '''
@@ -58,22 +62,11 @@ def generate_dataloader(configs):
     '''
     assert 'train' in configs.keys(),"config must have arguments for training(train) and validation(val)"
     if configs['dataset'] == "ImageNet":
-        train_data = ImageNet(configs['PATH'],split='train',scale=configs['scale'])
-        val_data = ImageNet(configs['PATH'],split='val',scale=configs['scale'])
+        train_data = ImageNet(configs['PATH'],configs['crop_size'],split='train',scale=configs['scale'])
+        val_data = ImageNet(configs['PATH'],configs['crop_size'],split='val',scale=configs['scale'])
 
-    train_dataloader = dataloader(train_data,
-                                batch_size=configs['PATH']['train']['batch_size'],
-                                shuffle=True,
-                                num_workers=configs['num_workers'],
-                                pin_memory=True,
-                                persistent_workers=True)
-
-    val_dataloader = dataloader(val_data,
-                                batch_size=configs['PATH']['val']['batch_size'],
-                                shuffle=False,
-                                num_workers=configs['num_workers'],
-                                pin_memory=True,
-                                persistent_workers=True)
+    train_dataloader = DataLoader(train_data,batch_size=configs['train']['batch_size'],shuffle=True,num_workers=configs['num_workers'],pin_memory=True,persistent_workers=True)
+    val_dataloader = DataLoader(val_data,batch_size=configs['val']['batch_size'],shuffle=False,num_workers=configs['num_workers'],pin_memory=True,persistent_workers=True)
 
     return train_dataloader,val_dataloader
 
