@@ -36,13 +36,14 @@ class Model:
             self.content_criterion = ContentLoss().to(config['device'])
             self.adversarial_criterion = nn.BCEWithLogitsLoss().to(config['device'])
             #initialize optimizer
-            self.d_optimizer = Adam(self.discriminator.parameters(), config['train']['d_lr'], config['train']['d_beta'])
-            self.g_optimizer = Adam(self.generator.parameters(), config['train']['g_lr'], config['train']['g_beta'])
+
+            self.d_optimizer = Adam(self.discriminator.parameters(), config['train']['d_lr'], (0.9, 0.999))
+            self.g_optimizer = Adam(self.generator.parameters(), config['train']['g_lr'],(0.9, 0.999))
             #initialize scheduler
             self.d_scheduler = lr_scheduler.StepLR(self.d_optimizer, config['train']['d_optimizer_step_size'], config['train']['d_optimizer_gamma'])
             self.g_scheduler = lr_scheduler.StepLR(self.g_optimizer, config['train']['g_optimizer_step_size'], config['train']['g_optimizer_gamma'])
 
-        if config['resume']:
+        if 'resume' in config.keys():
             self.restore_checkpoint(config)
         
     def restore_checkpoint(self,config):
