@@ -1,4 +1,7 @@
 exp_name: 'Pretrain_ImageNet'
+dataset: 'ImageNet'
+crop_size: 150
+device: 0
 scale : 4
 PATH: './Data/'
 MODEL_SAVE_LOCATION: './saved_models/ImageNet/' 

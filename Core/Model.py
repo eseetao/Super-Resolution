@@ -16,7 +16,7 @@ class Model:
     '''
     def __init__(self,config):
         #initialize encoder/decoder block
-        self.discriminator = Discriminator(config['height'],config['width']).to(config['device'])
+        self.discriminator = Discriminator(config['crop_size'],config['crop_size']).to(config['device'])
         self.generator = Generator(config['scale'],config['model']['block_depth']).to(config['device'])
         #save device for running ops on
         self.device = config['device']
