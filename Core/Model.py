@@ -111,14 +111,15 @@ class Model:
         Returns:
             Discriminator_loss: returns loss of discriminator from current step in training 
         '''
+        # Enabling optimizer for discriminator
+        self.d_optimizer.zero_grad()
         # generate label for discriminator
         real_label = torch.full([hr.size(0), 1], 1.0, dtype=hr.dtype, device=self.device)
         fake_label = torch.full([hr.size(0), 1], 0.0, dtype=hr.dtype, device=self.device)
         #enabling gradients for discriminator
         for parameter in self.discriminator.parameters():
             parameter.requires_grad = True
-        # Enabling optimizer for discriminator
-        self.d_optimizer.zero_grad()
+
         with amp.autocast():
             Discriminator_HR = self.discriminator(hr)
             Discriminator_HR_loss = self.adversarial_criterion(Discriminator_HR,real_label)  
@@ -139,20 +140,21 @@ class Model:
             sr: super resolution data
             hr: high resolution samples
         '''
+        #enabling optimizer for generator
+        self.g_optimizer.zero_grad()
         real_label = torch.full([hr.size(0), 1], 1.0, dtype=hr.dtype, device=self.device)
         #disabling gradients for discriminator
         #Because I dont trust myself and I dont know if it transfers from discriminator step
         for parameter in self.discriminator.parameters():
             parameter.requires_grad = False
-        #enabling optimizer for generator
-        self.g_optimizer.zero_grad()
 
         with amp.autocast():
             discriminator_output = self.discriminator(sr)
-            pixel_loss = self.pixel_criterion(sr,hr.detach())
-            content_loss = self.content_criterion(sr,hr.detach())
-            adverserial_loss = self.adversarial_criterion(discriminator_output)
+            pixel_loss = self.pixel_criterion(sr,hr)
+            content_loss = self.content_criterion(sr,hr)
+            adverserial_loss = self.adversarial_criterion(discriminator_output,real_label)
         generator_loss = (self.pixel_loss_weight*pixel_loss) + (self.adverserial_loss_weight*adverserial_loss) + (self.content_loss_weight*content_loss)
+        
         self.scaler.scale(generator_loss).backward()
         # Update generator parameters
         self.scaler.step(self.g_optimizer)

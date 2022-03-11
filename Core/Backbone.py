@@ -66,10 +66,10 @@ class UpsampleBlock(nn.Module):
     def __init__(self, channels,kernel_size=3,stride=1,dilation=1):
         super(UpsampleBlock, self).__init__()
         self.upsample_conv= nn.Conv2d(channels, channels * 4, kernel_size=kernel_size,stride=stride,padding=((kernel_size-1)*dilation)//2,bias=False)
-        self.shuffle = nn.PixelShuffle(2),
-        self.nl = nn.PReLU(),
+        self.shuffle = nn.PixelShuffle(2)
+        self.nl = nn.PReLU()
         
     def forward(self, x):
         expanded = self.upsample_conv(x)
         upsampled = self.nl(self.shuffle(expanded))
-        return upsampled
+        return upsampled   
