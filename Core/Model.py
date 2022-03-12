@@ -1,3 +1,4 @@
+import os
 from tqdm import tqdm
 import torch
 import torch.nn as nn
@@ -8,6 +9,7 @@ from torch.utils.tensorboard import SummaryWriter
 from .Generator import Generator
 from .Discriminator import Discriminator
 from .Loss import ContentLoss
+from .utils import plot_sample
 
 class Model:
     '''
@@ -23,7 +25,7 @@ class Model:
         #initialize scaler for propagating losses
         self.scaler = amp.GradScaler()
         #Initialize summary writer to write status of scalars into
-        self.writer = SummaryWriter(config['visualize_location'])
+        self.writer = SummaryWriter(os.path.join(config['visualize_location'],config['exp_name']))
         #weights for combining losses
         self.pixel_loss_weight = config['model']['pixel_weight']
         self.content_loss_weight = config['model']['content_weight']
@@ -45,7 +47,7 @@ class Model:
 
         if 'resume' in config.keys():
             self.restore_checkpoint(config)
-        
+
     def restore_checkpoint(self,config):
         '''
         Restores checkpoint for given config file
@@ -197,15 +199,19 @@ class Model:
             content_epoch_loss = content_epoch_loss + (content_loss.item()/lr.size(0))
             adverserial_epoch_loss = adverserial_epoch_loss  + (adverserial_loss.item()/lr.size(0))
 
-        self.writer("Train/Generator_loss",generator_epoch_loss/count,epoch)
-        self.writer("Train/Adverserial_loss",adverserial_epoch_loss/count,epoch)
-        self.writer("Train/Content_loss",content_epoch_loss/count,epoch)
-        self.writer("Train/Pixel_loss",pixel_epoch_loss/count,epoch)
-        self.writer("Train/Discriminator_loss",discriminator_epoch_loss/count,epoch)
+        self.writer.add_scalar("Train/Generator_loss",generator_epoch_loss/count,epoch)
+        self.writer.add_scalar("Train/Adverserial_loss",adverserial_epoch_loss/count,epoch)
+        self.writer.add_scalar("Train/Content_loss",content_epoch_loss/count,epoch)
+        self.writer.add_scalar("Train/Pixel_loss",pixel_epoch_loss/count,epoch)
+        self.writer.add_scalar("Train/Discriminator_loss",discriminator_epoch_loss/count,epoch)
+        
+        fig = plot_sample(hr[0],lr[0],sr[0])
+        self.writer.add_figure("Train/Sample0",fig,global_step=epoch)
+        fig = plot_sample(hr[1],lr[1],sr[1])
+        self.writer.add_figure("Train/Sample1",fig,global_step=epoch)
 
-        print("Mean generator loss :{} \n".format(generator_epoch_loss/count))
-        print("Mean discriminator loss :{} \n".format(discriminator_epoch_loss/count))
-
+        print("Mean generator loss during training :{} ".format(generator_epoch_loss/count))
+        print("Mean discriminator loss during training :{} ".format(discriminator_epoch_loss/count))
         self.d_scheduler.step()
         self.g_scheduler.step()
 
@@ -220,24 +226,41 @@ class Model:
             generator_loss : combination of pixel_loss,adverserial_loss and content_loss
         '''
         self.generator.eval()
+        generator_epoch_loss = 0
+        adverserial_epoch_loss = 0
+        content_epoch_loss = 0
+        pixel_epoch_loss = 0
+        count = 0
         for hr_tensor,lr_tensor in tqdm(dataloader):
             count = count + 1
             #transfer data to GPU for training
             hr = hr_tensor.to(self.device)
             lr = lr_tensor.to(self.device)
+            real_label = torch.full([hr.size(0), 1], 1.0, dtype=hr.dtype, device=self.device)
             #generate superresolution samples
             sr = self.generator(lr)
-            # take generator step to update corresponding weights
-            Generator_loss,pixel_loss,content_loss,adverserial_loss = self.generator_step(hr,sr)
+            # compute loss for current_step
+            with amp.autocast():
+                discriminator_output = self.discriminator(sr)
+                pixel_loss = self.pixel_criterion(sr,hr)
+                content_loss = self.content_criterion(sr,hr)
+                adverserial_loss = self.adversarial_criterion(discriminator_output,real_label)
+            generator_loss = (self.pixel_loss_weight*pixel_loss) + (self.adverserial_loss_weight*adverserial_loss) + (self.content_loss_weight*content_loss)
+
             #computing generator loss
-            generator_epoch_loss = generator_epoch_loss + (Generator_loss.item()/lr.size(0))
+            generator_epoch_loss = generator_epoch_loss + (generator_loss.item()/lr.size(0))
             pixel_epoch_loss = pixel_epoch_loss + (pixel_loss.item()/lr.size(0))
             content_epoch_loss = content_epoch_loss + (content_loss.item()/lr.size(0))
             adverserial_epoch_loss = adverserial_epoch_loss  + (adverserial_loss.item()/lr.size(0))
-        self.writer("Val/Generator_loss",generator_epoch_loss/count,epoch)
-        self.writer("Val/Adverserial_loss",adverserial_epoch_loss/count,epoch)
-        self.writer("Val/Content_loss",content_epoch_loss/count,epoch)
-        self.writer("Val/Pixel_loss",pixel_epoch_loss/count,epoch)
+            
+        self.writer.add_scalar("Val/Generator_loss",generator_epoch_loss/count,epoch)
+        self.writer.add_scalar("Val/Adverserial_loss",adverserial_epoch_loss/count,epoch)
+        self.writer.add_scalar("Val/Content_loss",content_epoch_loss/count,epoch)
+        self.writer.add_scalar("Val/Pixel_loss",pixel_epoch_loss/count,epoch)
+
+        fig = plot_sample(hr[0],lr[0],sr[0])
+        self.writer.add_figure("Val/Sample0",fig,global_step=epoch)
+
         print("Mean generator loss :{} \n".format(generator_epoch_loss/count))
         return generator_epoch_loss/count
 

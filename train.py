@@ -31,16 +31,16 @@ if __name__ == '__main__':
     best_loss = None#best generator loss
 
     for epoch in range(config['train']['epochs']):
-
+        print("Epoch :",epoch)
         SRGAN.epoch_train(train_loader,epoch)#trains one epoch
-        import pdb;pdb.set_trace()
         eval_loss = SRGAN.epoch_eval(val_loader,epoch)#evaluates validation data
-
         if epoch == 0 or best_loss>eval_loss:
             best_loss = eval_loss
+            create_folder(os.path.join(config['MODEL_SAVE_LOCATION'],'discriminator'))
+            create_folder(os.path.join(config['MODEL_SAVE_LOCATION'],'generator'))
             SRGAN.create_discriminator_checkpoint(epoch,os.path.join(config['MODEL_SAVE_LOCATION'],'discriminator','best_discriminator.pth'))
             SRGAN.create_generator_checkpoint(epoch,os.path.join(config['MODEL_SAVE_LOCATION'],'generator','best_generator.pth'))
-        
         if epoch%config['save_interval']==0:
             SRGAN.create_discriminator_checkpoint(epoch,os.path.join(config['MODEL_SAVE_LOCATION'],'discriminator','epoch_{}.pth'.format(epoch)))
-            SRGAN.create_generator_checkpoint(epoch,os.path.join(config['MODEL_SAVE_LOCATION'],'generator','epoch_{}.pth'.format(epoch)))           
+            SRGAN.create_generator_checkpoint(epoch,os.path.join(config['MODEL_SAVE_LOCATION'],'generator','epoch_{}.pth'.format(epoch)))    
+     

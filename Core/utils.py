@@ -1,26 +1,39 @@
 import matplotlib.pyplot as plt
 import os
 
-def plot_for_dataset_sample(sample):
+def rescale_for_plotting(tensor):
+    tensor = tensor.detach().cpu().numpy().transpose(1,2,0)
+    tensor = (tensor - tensor.min())/(tensor.max() - tensor.min())
+    return tensor
+def plot_sample(hr,lr,sr):
     '''
     Plots full resolution and low resolution samples side by side.
     Each sample input contains a (full_resolution, low_resolution) iterable
     Args:
         sample: sample from dataset
     '''
-    full_resolution = sample[0].cpu().numpy().transpose(1,2,0)
-    low_resolution = sample[1].cpu().numpy().transpose(1,2,0)
-    f,(ax1,ax2) = plt.subplots(1,2)
-    ax1.imshow(full_resolution)
-    ax1.set_title('Full resolution')
+    full_resolution = rescale_for_plotting(hr)
+    super_resolution = rescale_for_plotting(sr)
+    low_resolution = rescale_for_plotting(lr)
+
+    f,(ax1,ax2,ax3) = plt.subplots(1,3)
+    ax1.imshow(low_resolution)
+    ax1.set_title('low resolution')
     ax1.set_xticks([])
     ax1.set_yticks([])
-    
-    ax2.imshow(low_resolution)
-    ax2.set_title('Low resolution')
+
+    ax2.imshow(super_resolution)
+    ax2.set_title('super resolution')
     ax2.set_xticks([])
     ax2.set_yticks([])
-    plt.show()
+
+    ax3.imshow(full_resolution)
+    ax3.set_title('full resolution')
+    ax3.set_xticks([])
+    ax3.set_yticks([])
+    plt.tight_layout()
+    plt.close(f)
+    return f
 
 def create_folder(PATH):
     if os.path.isdir(PATH):

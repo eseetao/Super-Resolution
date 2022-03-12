@@ -31,22 +31,22 @@ class ImageNet(Dataset):
                 transforms.RandomHorizontalFlip(0.5),
                 transforms.PILToTensor(),
                 transforms.ConvertImageDtype(torch.float),
+                transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
             ])
         elif split == "val":
             self.hr_transforms = transforms.Compose([
                 transforms.CenterCrop(image_size),
                 transforms.PILToTensor(),
-                transforms.ConvertImageDtype(torch.float)               
+                transforms.ConvertImageDtype(torch.float),
+                transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
                 ])   
         else:
             raise Exception("Only implemented split == 'train' and 'val', found another argument")
-            
-        self.normalize = transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
         self.lr_transforms = transforms.Resize((image_size // scale,image_size // scale), interpolation=IMode.BICUBIC)     
     
     def __getitem__(self,index):
         #read image
-        image = Image.open(self.file_list[index])
+        image = Image.open(self.file_list[index]).convert('RGB')
         #generate full res and low res images
         hr_tensor = self.hr_transforms(image)
         lr_tensor = self.lr_transforms(hr_tensor)
@@ -68,5 +68,3 @@ def generate_dataloader(configs):
     val_dataloader = DataLoader(val_data,batch_size=configs['val']['batch_size'],shuffle=False,num_workers=configs['num_workers'],pin_memory=True,persistent_workers=True)
 
     return train_dataloader,val_dataloader
-
-       

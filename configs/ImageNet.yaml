@@ -1,12 +1,13 @@
 exp_name: 'Pretrain_ImageNet'
 dataset: 'ImageNet'
-crop_size: 64
+crop_size: 32
 device: 0
 scale : 4
 PATH: './Data/'
 MODEL_SAVE_LOCATION: './saved_models/ImageNet/' 
 num_workers: 1
 visualize_location: './Tensorboard/'
+save_interval: 3
 model:
   block_depth: 7
   pixel_weight : 1.0
