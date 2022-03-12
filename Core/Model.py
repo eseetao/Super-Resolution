@@ -10,6 +10,7 @@ from .Generator import Generator
 from .Discriminator import Discriminator
 from .Loss import ContentLoss
 from .utils import plot_sample
+
 class Model:
     '''
     Wrapper to cover discriminator, generator, optimizers and schedulers. Class initializes and handles optimizers and schedulers during training.
@@ -209,8 +210,8 @@ class Model:
         fig = plot_sample(hr[1],lr[1],sr[1])
         self.writer.add_figure("Train/Sample1",fig,global_step=epoch)
 
-        print("Mean generator loss during training :{} \n".format(generator_epoch_loss/count))
-        print("Mean discriminator loss during training :{} \n".format(discriminator_epoch_loss/count))
+        print("Mean generator loss during training :{} ".format(generator_epoch_loss/count))
+        print("Mean discriminator loss during training :{} ".format(discriminator_epoch_loss/count))
         self.d_scheduler.step()
         self.g_scheduler.step()
 

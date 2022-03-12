@@ -31,6 +31,7 @@ def plot_sample(hr,lr,sr):
     ax3.set_title('full resolution')
     ax3.set_xticks([])
     ax3.set_yticks([])
+    plt.tight_layout()
     plt.close(f)
     return f
 
