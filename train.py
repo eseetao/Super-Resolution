@@ -33,7 +33,6 @@ if __name__ == '__main__':
     for epoch in range(config['train']['epochs']):
 
         SRGAN.epoch_train(train_loader,epoch)#trains one epoch
-        import pdb;pdb.set_trace()
         eval_loss = SRGAN.epoch_eval(val_loader,epoch)#evaluates validation data
 
         if epoch == 0 or best_loss>eval_loss:
@@ -43,4 +42,5 @@ if __name__ == '__main__':
         
         if epoch%config['save_interval']==0:
             SRGAN.create_discriminator_checkpoint(epoch,os.path.join(config['MODEL_SAVE_LOCATION'],'discriminator','epoch_{}.pth'.format(epoch)))
-            SRGAN.create_generator_checkpoint(epoch,os.path.join(config['MODEL_SAVE_LOCATION'],'generator','epoch_{}.pth'.format(epoch)))           
+            SRGAN.create_generator_checkpoint(epoch,os.path.join(config['MODEL_SAVE_LOCATION'],'generator','epoch_{}.pth'.format(epoch)))    
+        import pdb;pdb.set_trace()       
